@@ -2,7 +2,7 @@
  * heartbleed.c -- CVE-2014-0160 as a verification target.
  *
  * The function tls1_process_heartbeat below is the body as it stands in
- * ssl/t1_lib.c of OpenSSL 1.0.1g, reproduced without modification, including
+ * ssl/t1_lib.c of OpenSSL 1.0.1f, reproduced without modification, including
  * its comments, its brace style and the typo in the allocation comment. The
  * macros n2s and s2n are the definitions from ssl/ssl_locl.h of the same
  * release. Everything else in this file is scaffolding written to let the
@@ -95,7 +95,7 @@ static int ssl3_write_bytes(SSL *s, int type, const void *buf, int len)
     return len;
 }
 
-/* --- verbatim from ssl/t1_lib.c, OpenSSL 1.0.1g --------------------------- */
+/* --- verbatim from ssl/t1_lib.c, OpenSSL 1.0.1f --------------------------- */
 
 int
 tls1_process_heartbeat(SSL *s)
@@ -105,19 +105,15 @@ tls1_process_heartbeat(SSL *s)
 	unsigned int payload;
 	unsigned int padding = 16; /* Use minimum padding */
 
+	/* Read type and payload length first */
+	hbtype = *p++;
+	n2s(p, payload);
+	pl = p;
+
 	if (s->msg_callback)
 		s->msg_callback(0, s->version, TLS1_RT_HEARTBEAT,
 			&s->s3->rrec.data[0], s->s3->rrec.length,
 			s, s->msg_callback_arg);
-
-	/* Read type and payload length first */
-	if (1 + 2 + 16 > s->s3->rrec.length)
-		return 0; /* silently discard */
-	hbtype = *p++;
-	n2s(p, payload);
-	if (1 + 2 + payload + 16 > s->s3->rrec.length)
-		return 0; /* silently discard per RFC 6520 sec. 4 */
-	pl = p;
 
 	if (hbtype == TLS1_HB_REQUEST)
 		{
